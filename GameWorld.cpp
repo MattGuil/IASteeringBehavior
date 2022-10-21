@@ -1,5 +1,7 @@
 #include "GameWorld.h"
 #include "Vehicle.h"
+#include "AgentPoursuiveur.h"
+#include "AgentLeader.h"
 #include "constants.h"
 #include "Obstacle.h"
 #include "2d/Geometry.h"
@@ -56,7 +58,7 @@ GameWorld::GameWorld(int cx, int cy):
     Vector2D SpawnPos = Vector2D(cx/2.0+RandomClamped()*cx/2.0,
                                  cy/2.0+RandomClamped()*cy/2.0);
 
-
+    /*
     Vehicle* pVehicle = new Vehicle(this,
                                     SpawnPos,                 //initial position
                                     RandFloat()*TwoPi,        //start rotation
@@ -66,29 +68,65 @@ GameWorld::GameWorld(int cx, int cy):
                                     Prm.MaxSpeed,             //max velocity
                                     Prm.MaxTurnRatePerSecond, //max turn rate
                                     Prm.VehicleScale);        //scale
+    */
 
-    pVehicle->Steering()->FlockingOn();
+    if (a == 0) {
+        AgentLeader* pAgentLeader = new AgentLeader(this,
+                                                    SpawnPos,                 //initial position
+                                                    RandFloat() * TwoPi,        //start rotation
+                                                    Vector2D(0, 0),            //velocity
+                                                    Prm.VehicleMass,          //mass
+                                                    Prm.MaxSteeringForce,     //max force
+                                                    Prm.MaxSpeed,             //max velocity
+                                                    Prm.MaxTurnRatePerSecond, //max turn rate
+                                                    Prm.VehicleScale);
 
-    m_Vehicles.push_back(pVehicle);
+        m_Vehicles.push_back(pAgentLeader);
 
-    //add it to the cell subdivision
-    m_pCellSpace->AddEntity(pVehicle);
+        //add it to the cell subdivision
+        m_pCellSpace->AddEntity(pAgentLeader);
+
+        // TO MOVE THE LEADER (PART 2)
+        // pAgentLeader->Steering()->ArriveOn();
+    }
+    else {
+        AgentPoursuiveur* pAgentPoursuiveur = new AgentPoursuiveur(this,
+                                                          SpawnPos,                 //initial position
+                                                          RandFloat() * TwoPi,        //start rotation
+                                                          Vector2D(0, 0),            //velocity
+                                                          Prm.VehicleMass,          //mass
+                                                          Prm.MaxSteeringForce,     //max force
+                                                          Prm.MaxSpeed,             //max velocity
+                                                          Prm.MaxTurnRatePerSecond, //max turn rate
+                                                          Prm.VehicleScale,
+                                                          m_Vehicles[a - 1],
+                                                          Vector2D(.25, .25));
+
+        m_Vehicles.push_back(pAgentPoursuiveur);
+
+        //add it to the cell subdivision
+        m_pCellSpace->AddEntity(pAgentPoursuiveur);
+    }
+    
   }
 
 
 #define SHOAL
 #ifdef SHOAL
-  m_Vehicles[Prm.NumAgents-1]->Steering()->FlockingOff();
-  m_Vehicles[Prm.NumAgents-1]->SetScale(Vector2D(10, 10));
-  m_Vehicles[Prm.NumAgents-1]->Steering()->WanderOn();
-  m_Vehicles[Prm.NumAgents-1]->SetMaxSpeed(70);
+  /*
+    m_Vehicles[Prm.NumAgents-1]->Steering()->FlockingOff();
+    m_Vehicles[Prm.NumAgents-1]->SetScale(Vector2D(10, 10));
+    m_Vehicles[Prm.NumAgents-1]->Steering()->WanderOn();
+    //m_Vehicles[Prm.NumAgents - 1]->Steering()->OffsetPursuitOn(m_Vehicles[0], Vector2D(1, 1));
+    m_Vehicles[Prm.NumAgents-1]->SetMaxSpeed(70);
 
-
-   for (int i=0; i<Prm.NumAgents-1; ++i)
-  {
-    m_Vehicles[i]->Steering()->EvadeOn(m_Vehicles[Prm.NumAgents-1]);
-
-  }
+    for (int i=0; i<Prm.NumAgents-1; ++i)
+    {
+        //m_Vehicles[i]->Steering()->EvadeOn(m_Vehicles[Prm.NumAgents-1]);
+        m_Vehicles[i]->SetMaxSpeed(70);
+        m_Vehicles[i]->Steering()->OffsetPursuitOn(m_Vehicles[i + 1], Vector2D(1, 1));
+    }  
+  */
 #endif
  
   //create any obstacles or walls
