@@ -21,6 +21,8 @@
 #include "BaseGameEntity.h"
 #include "EntityFunctionTemplates.h"
 #include "vehicle.h"
+#include "AgentLeader.h"
+#include "AgentPoursuiveur.h"
 
 
 class Obstacle;
@@ -37,6 +39,7 @@ private:
 
   //a container of all the moving entities
   std::vector<Vehicle*>         m_Vehicles;
+  std::vector<AgentPoursuiveur*> m_Poursuiveurs;
 
   //any obstacles
   std::vector<BaseGameEntity*>  m_Obstacles;
@@ -75,6 +78,9 @@ private:
   bool  m_bViewKeys;
   bool  m_bShowCellSpaceInfo;
 
+  //leader agent
+  AgentLeader* pAgentLeader;
+
 
   void CreateObstacles();
 
@@ -83,10 +89,14 @@ private:
   
 
 public:
+
+    bool leaderIsControlled = false;
   
   GameWorld(int cx, int cy);
 
   ~GameWorld();
+
+  void  SetupAgents(int cx, int cy);
 
   void  Update(double time_elapsed);
 
@@ -113,6 +123,7 @@ public:
 
   //handle WM_COMMAND messages
   void        HandleKeyPresses(WPARAM wParam);
+  void        InversePursuitOffset();
   void        HandleMenuItems(WPARAM wParam, HWND hwnd);
   
   void        TogglePause(){m_bPaused = !m_bPaused;}

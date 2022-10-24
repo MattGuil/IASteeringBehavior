@@ -10,9 +10,28 @@ AgentPoursuiveur::AgentPoursuiveur(GameWorld* world,
                                    double    max_turn_rate,
                                    double    scale,
                                    Vehicle* leader,
-                                   Vector2D offset)
-    : Vehicle(world, position, rotation, velocity, mass, max_force, max_speed, max_turn_rate, scale)
+                                   Vector2D offset,
+                                   bool     leaderIsControlled)
+    : m_leader(leader), m_offset(offset), Vehicle(world, position, rotation, velocity, mass, max_force, max_speed, max_turn_rate, scale)
 {
-    this->SetMaxSpeed(50);
+    if (!leaderIsControlled) {
+        this->SetMaxSpeed(70);
+    }
+    else {
+        this->SetMaxSpeed(100);
+    }
 	this->Steering()->OffsetPursuitOn(leader, offset);
+}
+
+Vector2D AgentPoursuiveur::GetOffset() {
+    return this->m_offset;
+}
+
+Vehicle* AgentPoursuiveur::GetLeader() {
+    return this->m_leader;
+}
+
+void AgentPoursuiveur::SetOffset(Vector2D newOffset) {
+    this->Steering()->SetOffset(newOffset);
+    this->m_offset = newOffset;
 }

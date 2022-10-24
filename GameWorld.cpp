@@ -20,6 +20,9 @@
 #include <list>
 using std::list;
 
+#include <iostream>
+using namespace std;
+
 
 //------------------------------- ctor -----------------------------------
 //------------------------------------------------------------------------
@@ -48,68 +51,9 @@ GameWorld::GameWorld(int cx, int cy):
   m_pCellSpace = new CellSpacePartition<Vehicle*>((double)cx, (double)cy, Prm.NumCellsX, Prm.NumCellsY, Prm.NumAgents);
 
   double border = 30;
-  m_pPath = new Path(5, border, border, cx-border, cy-border, true); 
+  m_pPath = new Path(5, border, border, cx-border, cy-border, true);
 
-  //setup the agents
-  for (int a=0; a<Prm.NumAgents; ++a)
-  {
-
-    //determine a random starting position
-    Vector2D SpawnPos = Vector2D(cx/2.0+RandomClamped()*cx/2.0,
-                                 cy/2.0+RandomClamped()*cy/2.0);
-
-    /*
-    Vehicle* pVehicle = new Vehicle(this,
-                                    SpawnPos,                 //initial position
-                                    RandFloat()*TwoPi,        //start rotation
-                                    Vector2D(0,0),            //velocity
-                                    Prm.VehicleMass,          //mass
-                                    Prm.MaxSteeringForce,     //max force
-                                    Prm.MaxSpeed,             //max velocity
-                                    Prm.MaxTurnRatePerSecond, //max turn rate
-                                    Prm.VehicleScale);        //scale
-    */
-
-    if (a == 0) {
-        AgentLeader* pAgentLeader = new AgentLeader(this,
-                                                    SpawnPos,                 //initial position
-                                                    RandFloat() * TwoPi,        //start rotation
-                                                    Vector2D(0, 0),            //velocity
-                                                    Prm.VehicleMass,          //mass
-                                                    Prm.MaxSteeringForce,     //max force
-                                                    Prm.MaxSpeed,             //max velocity
-                                                    Prm.MaxTurnRatePerSecond, //max turn rate
-                                                    Prm.VehicleScale);
-
-        m_Vehicles.push_back(pAgentLeader);
-
-        //add it to the cell subdivision
-        m_pCellSpace->AddEntity(pAgentLeader);
-
-        // TO MOVE THE LEADER (PART 2)
-        // pAgentLeader->Steering()->ArriveOn();
-    }
-    else {
-        AgentPoursuiveur* pAgentPoursuiveur = new AgentPoursuiveur(this,
-                                                          SpawnPos,                 //initial position
-                                                          RandFloat() * TwoPi,        //start rotation
-                                                          Vector2D(0, 0),            //velocity
-                                                          Prm.VehicleMass,          //mass
-                                                          Prm.MaxSteeringForce,     //max force
-                                                          Prm.MaxSpeed,             //max velocity
-                                                          Prm.MaxTurnRatePerSecond, //max turn rate
-                                                          Prm.VehicleScale,
-                                                          m_Vehicles[a - 1],
-                                                          Vector2D(.25, .25));
-
-        m_Vehicles.push_back(pAgentPoursuiveur);
-
-        //add it to the cell subdivision
-        m_pCellSpace->AddEntity(pAgentPoursuiveur);
-    }
-    
-  }
-
+  SetupAgents(cx, cy);
 
 #define SHOAL
 #ifdef SHOAL
@@ -154,6 +98,75 @@ GameWorld::~GameWorld()
   delete m_pPath;
 }
 
+void GameWorld::SetupAgents(int cx, int cy) {
+    for (int a = 0; a < Prm.NumAgents; ++a)
+    {
+
+        //determine a random starting position
+        Vector2D SpawnPos = Vector2D(cx / 2.0 + RandomClamped() * cx / 2.0,
+            cy / 2.0 + RandomClamped() * cy / 2.0);
+
+        if (a == 0) {
+            pAgentLeader = new AgentLeader(this,
+                SpawnPos,                 //initial position
+                RandFloat() * TwoPi,        //start rotation
+                Vector2D(0, 0),            //velocity
+                Prm.VehicleMass,          //mass
+                Prm.MaxSteeringForce,     //max force
+                Prm.MaxSpeed,             //max velocity
+                Prm.MaxTurnRatePerSecond, //max turn rate
+                Prm.VehicleScale,
+                leaderIsControlled);
+
+            m_Vehicles.push_back(pAgentLeader);
+
+            //add it to the cell subdivision
+            m_pCellSpace->AddEntity(pAgentLeader);
+
+            // TO MOVE THE LEADER (PART 2)
+            // pAgentLeader->Steering()->ArriveOn();
+        }
+        else {
+            AgentPoursuiveur* pAgentPoursuiveur;
+            if (!leaderIsControlled) {
+                pAgentPoursuiveur = new AgentPoursuiveur(this,
+                    SpawnPos,                 //initial position
+                    RandFloat() * TwoPi,        //start rotation
+                    Vector2D(0, 0),            //velocity
+                    Prm.VehicleMass,          //mass
+                    Prm.MaxSteeringForce,     //max force
+                    Prm.MaxSpeed,             //max velocity
+                    Prm.MaxTurnRatePerSecond, //max turn rate
+                    Prm.VehicleScale,
+                    m_Vehicles[a - 1],
+                    Vector2D(.25, .25),
+                    leaderIsControlled);
+            }
+            else {
+                pAgentPoursuiveur = new AgentPoursuiveur(this,
+                    SpawnPos,                 //initial position
+                    RandFloat() * TwoPi,        //start rotation
+                    Vector2D(0, 0),            //velocity
+                    Prm.VehicleMass,          //mass
+                    Prm.MaxSteeringForce,     //max force
+                    Prm.MaxSpeed,             //max velocity
+                    Prm.MaxTurnRatePerSecond, //max turn rate
+                    Prm.VehicleScale,
+                    m_Vehicles[0],
+                    Vector2D(cos((a * pi) / 10), sin((a * pi) / 10)) * 100,
+                    leaderIsControlled);
+
+                m_Poursuiveurs.push_back(pAgentPoursuiveur);
+            }
+
+            m_Vehicles.push_back(pAgentPoursuiveur);
+
+            //add it to the cell subdivision
+            m_pCellSpace->AddEntity(pAgentPoursuiveur);
+        }
+
+    }
+}
 
 //----------------------------- Update -----------------------------------
 //------------------------------------------------------------------------
@@ -287,69 +300,97 @@ void GameWorld::SetCrosshair(POINTS p)
 //------------------------- HandleKeyPresses -----------------------------
 void GameWorld::HandleKeyPresses(WPARAM wParam)
 {
-
-  switch(wParam)
-  {
-  case 'U':
+    switch(wParam)
     {
-      delete m_pPath;
-      double border = 60;
-      m_pPath = new Path(RandInt(3, 7), border, border, cxClient()-border, cyClient()-border, true); 
-      m_bShowPath = true; 
-      for (unsigned int i=0; i<m_Vehicles.size(); ++i)
-      {
-        m_Vehicles[i]->Steering()->SetPath(m_pPath->GetPath());
-      }
-    }
-    break;
+        case 'U':
+            {
+                delete m_pPath;
+                double border = 60;
+                m_pPath = new Path(RandInt(3, 7), border, border, cxClient()-border, cyClient()-border, true); 
+                m_bShowPath = true; 
+                for (unsigned int i=0; i<m_Vehicles.size(); ++i)
+                {
+                m_Vehicles[i]->Steering()->SetPath(m_pPath->GetPath());
+                }
+            }
+            break;
 
-    case 'P':
+        case 'P':
       
-      TogglePause(); break;
+            TogglePause(); break;
 
-    case 'O':
+        case 'O':
 
-      ToggleRenderNeighbors(); break;
+            ToggleRenderNeighbors(); break;
 
-    case 'I':
+        case 'I':
+        
+            {
+            for (unsigned int i=0; i<m_Vehicles.size(); ++i)
+            {
+                m_Vehicles[i]->ToggleSmoothing();
+            }
 
-      {
-        for (unsigned int i=0; i<m_Vehicles.size(); ++i)
-        {
-          m_Vehicles[i]->ToggleSmoothing();
-        }
+            }
 
-      }
+            break;
 
-      break;
+        case 'Y':
 
-    case 'Y':
+            m_bShowObstacles = !m_bShowObstacles;
 
-       m_bShowObstacles = !m_bShowObstacles;
+            if (!m_bShowObstacles)
+            {
+                m_Obstacles.clear();
 
-        if (!m_bShowObstacles)
-        {
-          m_Obstacles.clear();
+                for (unsigned int i=0; i<m_Vehicles.size(); ++i)
+                {
+                m_Vehicles[i]->Steering()->ObstacleAvoidanceOff();
+                }
+            }
+            else
+            {
+                CreateObstacles();
 
-          for (unsigned int i=0; i<m_Vehicles.size(); ++i)
-          {
-            m_Vehicles[i]->Steering()->ObstacleAvoidanceOff();
-          }
-        }
-        else
-        {
-          CreateObstacles();
+                for (unsigned int i=0; i<m_Vehicles.size(); ++i)
+                {
+                m_Vehicles[i]->Steering()->ObstacleAvoidanceOn();
+                }
+            }
+            break;
 
-          for (unsigned int i=0; i<m_Vehicles.size(); ++i)
-          {
-            m_Vehicles[i]->Steering()->ObstacleAvoidanceOn();
-          }
-        }
-        break;
+        case 'W':
+            InversePursuitOffset();
+            pAgentLeader->SetVelocity(Vector2D(0, -100));
+            break;
+        case 'S':
+            InversePursuitOffset();
+            pAgentLeader->SetVelocity(Vector2D(0, 100));
+            break;
+        case 'A':
+            InversePursuitOffset();
+            pAgentLeader->SetVelocity(Vector2D(-100, 0));
+            break;
+        case 'D':
+            InversePursuitOffset();
+            pAgentLeader->SetVelocity(Vector2D(100, 0));
+            break;
 
-  }//end switch
+        case 'M':
+            m_Vehicles.clear();
+            m_Poursuiveurs.clear();
+            leaderIsControlled = !leaderIsControlled;
+            SetupAgents(m_cxClient, m_cyClient);
+
+    }//end switch
 }
 
+void GameWorld::InversePursuitOffset() {
+    for (int i = 0; i < Prm.NumAgents - 1; i++)
+    {
+        m_Poursuiveurs[i]->SetOffset(Vector2D(-(m_Poursuiveurs[i]->GetOffset().x), -(m_Poursuiveurs[i]->GetOffset().y)));
+    }
+}
 
 
 //-------------------------- HandleMenuItems -----------------------------

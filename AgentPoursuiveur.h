@@ -14,7 +14,16 @@ public:
                      double    max_speed,
                      double    max_turn_rate,
                      double    scale,
-                     Vehicle*   leader,
-                     Vector2D  offset);
+                     Vehicle*  leader,
+                     Vector2D  offset,
+                     bool      leaderIsControlled);
+
+    Vector2D GetOffset();
+    Vehicle* GetLeader();
+    void SetOffset(Vector2D offset);
+
+private:
+    Vehicle* m_leader;
+    Vector2D m_offset;
 };
 
