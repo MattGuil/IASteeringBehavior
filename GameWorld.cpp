@@ -47,13 +47,7 @@ GameWorld::GameWorld(int cx, int cy):
             m_bShowCellSpaceInfo(false)
 {
 
-  //setup the spatial subdivision class
-  m_pCellSpace = new CellSpacePartition<Vehicle*>((double)cx, (double)cy, Prm.NumCellsX, Prm.NumCellsY, Prm.NumAgents);
-
-  double border = 30;
-  m_pPath = new Path(5, border, border, cx-border, cy-border, true);
-
-  SetupAgents(cx, cy);
+  Setup(cx, cy);
 
 #define SHOAL
 #ifdef SHOAL
@@ -98,7 +92,15 @@ GameWorld::~GameWorld()
   delete m_pPath;
 }
 
-void GameWorld::SetupAgents(int cx, int cy) {
+void GameWorld::Setup(int cx, int cy) {
+
+    // Setup the spatial subdivision class
+    m_pCellSpace = new CellSpacePartition<Vehicle*>((double)cx, (double)cy, Prm.NumCellsX, Prm.NumCellsY, Prm.NumAgents);
+
+    double border = 30;
+    m_pPath = new Path(5, border, border, cx - border, cy - border, true);
+
+    // Setup agents
     for (int a = 0; a < Prm.NumAgents; ++a)
     {
 
@@ -165,7 +167,16 @@ void GameWorld::SetupAgents(int cx, int cy) {
             m_pCellSpace->AddEntity(pAgentPoursuiveur);
         }
 
+        // Manage walls
+        if (m_bShowWalls) {
+            m_Vehicles[a]->Steering()->WallAvoidanceOn();
+        }
+        else {
+            m_Vehicles[a]->Steering()->WallAvoidanceOff();
+        }
+
     }
+
 }
 
 //----------------------------- Update -----------------------------------
@@ -380,7 +391,7 @@ void GameWorld::HandleKeyPresses(WPARAM wParam)
             m_Vehicles.clear();
             m_Poursuiveurs.clear();
             leaderIsControlled = !leaderIsControlled;
-            SetupAgents(m_cxClient, m_cyClient);
+            Setup(m_cxClient, m_cyClient);
 
     }//end switch
 }

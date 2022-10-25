@@ -96,7 +96,7 @@ public:
 
   ~GameWorld();
 
-  void  SetupAgents(int cx, int cy);
+  void  Setup(int cx, int cy);
 
   void  Update(double time_elapsed);
 
